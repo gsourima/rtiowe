@@ -1,5 +1,8 @@
 #include <climits>
+#include <cstdlib>
+#include <ctime>
 
+#include "camera.h"
 #include "hitable_list.h"
 #include "sphere.h"
 
@@ -26,19 +29,22 @@ vec3 ray_color( const ray& r, hitable* scene )
     return (1.0f-t)*vec3(1.0) + t*vec3(0.5f, 0.7f, 1.0f);
 }
 
+float randf() { return rand() / float( RAND_MAX ); }
+
 int main()
 {
+    std::srand( (unsigned int) std::time(NULL));
+
+    //int w = 240;
+    //int h = 135;
     int w = 960;
     int h = 540;
+    int s = 32;
 
     char* img = new char[ w * h * 3 ];
-    int k = 0;
+    int p = 0;
 
-    vec3 corner_ll( -2.4f, -1.35f, -1 );
-    vec3 horiz( 4.8f, 0, 0 );
-    vec3 vert( 0, 2.7f, 0 );
-    vec3 orig( 0 );
-
+    camera cam;
     hitable* list[2];
     list[0] = new sphere( vec3(0,0,-1), 0.5f );
     list[1] = new sphere( vec3( 0, -100.5f, -1), 100 );
@@ -48,16 +54,22 @@ int main()
     {
         for ( int i = 0; i < w; i++ )
         {
-            float u = float(i) / float(w);
-            float v = float(j) / float(h);
+            vec3 col( 0 );
 
-            ray r( orig, corner_ll + u*horiz + v * vert );
+            for ( int k = 0; k < s ; k++ )
+            {
+                float u = float(i + randf()) / float(w);
+                float v = float(j + randf()) / float(h);
+
+                ray r = cam.get_ray(u, v);
             
-            vec3 col = ray_color( r, scene );
+                col += ray_color( r, scene );
+            }
+            col /= float(s);
 
-            img[k++] = char( 255.99f*col[0] );
-            img[k++] = char( 255.99f*col[1] );
-            img[k++] = char( 255.99f*col[2] );
+            img[p++] = char( 255.99f*col[0] );
+            img[p++] = char( 255.99f*col[1] );
+            img[p++] = char( 255.99f*col[2] );
         }
     }
 

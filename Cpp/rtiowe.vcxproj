@@ -114,6 +114,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\camera.h" />
     <ClInclude Include="include\hitable.h" />
     <ClInclude Include="include\hitable_list.h" />
     <ClInclude Include="include\ray.h" />
