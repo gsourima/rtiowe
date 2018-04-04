@@ -1,10 +1,13 @@
-#include "ray.h"
+#include "intersections.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 vec3 ray_color( const ray& r )
 {
+    if ( hit_sphere( vec3(0,0,-1), .5f, r ) )
+        return vec3(1, 0, 0);
+
     vec3 unit_dir = unit_vector( r.direction() );
     float t = 0.5f * unit_dir.y() + 0.5f;
     return (1.0f-t)*vec3(1.0) + t*vec3(0.5f, 0.7f, 1.0f);
@@ -12,15 +15,15 @@ vec3 ray_color( const ray& r )
 
 int main()
 {
-    int w = 200;
-    int h = 100;
+    int w = 960;
+    int h = 540;
 
     char* img = new char[ w * h * 3 ];
     int k = 0;
 
-    vec3 corner_ll( -2, -1, -1 );
-    vec3 horiz( 4, 0, 0 );
-    vec3 vert( 0, 2, 0 );
+    vec3 corner_ll( -2.4f, -1.35f, -1 );
+    vec3 horiz( 4.8f, 0, 0 );
+    vec3 vert( 0, 2.7f, 0 );
     vec3 orig( 0 );
 
     for ( int j = h-1; j >= 0; j-- )
