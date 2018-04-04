@@ -1,5 +1,4 @@
-//#define STB_IMAGE_IMPLEMENTATION
-//#include "stb_image.h"
+#include "vec3.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -16,13 +15,11 @@ int main()
     {
         for ( int i = 0; i < w; i++ )
         {
-            float r = float(i) / float(w);
-            float g = float(j) / float(h);
-            float b = 0.2f;
+            vec3 col( float(i) / float(w), float(j) / float(h), 0.2f );
 
-            img[k++] = char( 255.99f*r );
-            img[k++] = char( 255.99f*g );
-            img[k++] = char( 255.99f*b );
+            img[k++] = char( 255.99f*col[0] );
+            img[k++] = char( 255.99f*col[1] );
+            img[k++] = char( 255.99f*col[2] );
         }
     }
 
