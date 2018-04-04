@@ -114,7 +114,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\hitable.h" />
+    <ClInclude Include="include\hitable_list.h" />
     <ClInclude Include="include\ray.h" />
+    <ClInclude Include="include\sphere.h" />
     <ClInclude Include="include\stb_image.h" />
     <ClInclude Include="include\stb_image_write.h" />
     <ClInclude Include="include\vec3.h" />

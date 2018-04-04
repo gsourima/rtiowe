@@ -1,12 +1,25 @@
-#include "intersections.h"
+#include <climits>
+
+#include "hitable_list.h"
+#include "sphere.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-vec3 ray_color( const ray& r )
+vec3 ray_color( const ray& r, hitable* scene )
 {
-    if ( hit_sphere( vec3(0,0,-1), .5f, r ) )
-        return vec3(1, 0, 0);
+    hit_record rec;
+
+    const int N = 2;
+
+    if ( scene->hit( r, 0, std::numeric_limits<float>::max(), rec ) )
+    {        
+        // Outputting ids as colors
+        // int id = 1 + rec.id;
+        // return vec3( id/float(N), (N-id)/float(N), (id+N)/float(2*N) );
+        
+        return 0.5f * rec.N + 0.5f;
+    }
 
     vec3 unit_dir = unit_vector( r.direction() );
     float t = 0.5f * unit_dir.y() + 0.5f;
@@ -26,6 +39,11 @@ int main()
     vec3 vert( 0, 2.7f, 0 );
     vec3 orig( 0 );
 
+    hitable* list[2];
+    list[0] = new sphere( vec3(0,0,-1), 0.5f );
+    list[1] = new sphere( vec3( 0, -100.5f, -1), 100 );
+    hitable* scene = new hitable_list( list, 2 );
+
     for ( int j = h-1; j >= 0; j-- )
     {
         for ( int i = 0; i < w; i++ )
@@ -35,7 +53,7 @@ int main()
 
             ray r( orig, corner_ll + u*horiz + v * vert );
             
-            vec3 col = ray_color( r );
+            vec3 col = ray_color( r, scene );
 
             img[k++] = char( 255.99f*col[0] );
             img[k++] = char( 255.99f*col[1] );
