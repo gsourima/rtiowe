@@ -34,7 +34,7 @@ public:
     inline float length() const { return sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]); }
     inline float squared_length() const { return e[0]*e[0] + e[1]*e[1] + e[2]*e[2]; }
     inline void make_unit_vector();
-
+    inline vec3 reflect( const vec3& n );
 
     float e[3];
 };
@@ -138,6 +138,11 @@ inline vec3& vec3::operator/=(const float t) {
     e[2]  *= k;
     return *this;
 }
+
+inline vec3 vec3::reflect( const vec3& n ) { 
+    return *this - 2*dot(*this,n)*n;
+}
+
 
 inline vec3 unit_vector(vec3 v) {
     return v / v.length();

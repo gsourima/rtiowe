@@ -3,6 +3,8 @@
 
 #include "ray.h"
 
+class material;
+
 static int object_id_cpt = 0;
 
 struct hit_record
@@ -11,6 +13,7 @@ struct hit_record
     vec3 P;
     vec3 N;
     int id;
+    material* mat;
 };
 
 class hitable

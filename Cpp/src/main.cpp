@@ -1,38 +1,38 @@
 #include <climits>
-#include <cstdlib>
-#include <ctime>
 #include <cstdio>
 
 #include "camera.h"
 #include "hitable_list.h"
 #include "sphere.h"
+#include "randgen.h"
+#include "materials.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
-float randf() { return rand() / float( RAND_MAX ); }
+#define TMIN_EPS 0.001f
+#define NB_OBJS 4
+#define MAX_DEPTH 5
+#define SAMPLES_AA 32
 
-vec3 random_in_unit_sphere()
-{
-    vec3 p;
-    do { p = 2 * vec3( randf(), randf(), randf() ) - 1; }
-    while ( dot(p,p) >= 1 );
-    return p;
-}
-
-vec3 ray_color( const ray& r, hitable* scene )
+vec3 ray_color( const ray& r, hitable* scene, int depth = 0 )
 {
     hit_record rec;
 
-    const int N = 2;
-
-#define TMIN_EPS 0.001f
-
     if ( scene->hit( r, TMIN_EPS, std::numeric_limits<float>::max(), rec ) )
     {        
+        // Outputting material evaluation
+        ray scattered;
+        vec3 attenuation;
+        if ( depth < MAX_DEPTH && rec.mat->scatter( r, rec, attenuation, scattered ) )
+        {
+            return attenuation * ray_color( scattered, scene, depth+1 );
+        }
+        else return 0;
+
         // Outputting diffuse reflection
-        vec3 target = rec.P + rec.N + random_in_unit_sphere();
-        return 0.5f * ray_color( ray( rec.P, target-rec.P ), scene );
+        // vec3 target = rec.P + rec.N + random_in_unit_sphere();
+        // return 0.5f * ray_color( ray( rec.P, target-rec.P ), scene );
 
         // Outputting ids as colors
         // int id = 1 + rec.id;
@@ -43,29 +43,32 @@ vec3 ray_color( const ray& r, hitable* scene )
     }
 
     vec3 unit_dir = unit_vector( r.direction() );
-    float t = 0.5f * unit_dir.y() + 0.5f;
-    return (1.0f-t)*vec3(1.0) + t*vec3(0.5f, 0.7f, 1.0f);
+    float t = abs(unit_dir.y()); // 0.5f * unit_dir.y() + 0.5f;
+    return t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f);
 }
 
 int main()
 {
-    std::srand( (unsigned int) std::time(NULL));
-
     //int w = 240;
     //int h = 135;
     const int w = 960;
     const int h = 540;
-    const int s = 32;
     const int pixels = w*h;
 
     char* img = new char[ w * h * 3 ];
     int p = 0;
 
     camera cam;
-    hitable* list[2];
-    list[0] = new sphere( vec3(0,0,-1), 0.5f );
-    list[1] = new sphere( vec3( 0, -100.5f, -1), 100 );
-    hitable* scene = new hitable_list( list, 2 );
+    hitable* list[NB_OBJS];
+    list[0] = new sphere( vec3(0,1,-3),       1.5f, new lambertian(vec3(0.8f, 0.3f, 0.3f)) );
+    list[1] = new sphere( vec3(0,-100.5f,-1), 100,  new lambertian(vec3(0.8f, 0.8f, 0)) );
+    list[3] = new sphere( vec3(-1,0,-1),      0.5f, new metal(vec3(0.8f, 0.8f, 0.8f), 0.2f) );
+    list[2] = new sphere( vec3(1,0,-1),       0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.9f) );
+    //list[0] = new sphere( vec3(0,1,-3),       1.5f, material::default );
+    //list[1] = new sphere( vec3(0,-100.5f,-1), 100,  material::default );
+    //list[3] = new sphere( vec3(-1,0,-1),      0.5f, material::default );
+    //list[2] = new sphere( vec3(1,0,-1),       0.5f, material::default );
+    hitable* scene = new hitable_list( list, NB_OBJS );
 
     for ( int j = h-1; j >= 0; j-- )
     {
@@ -73,7 +76,7 @@ int main()
         {
             vec3 col( 0 );
 
-            for ( int k = 0; k < s ; k++ )
+            for ( int k = 0; k < SAMPLES_AA ; k++ )
             {
                 float u = float(i + randf()) / float(w);
                 float v = float(j + randf()) / float(h);
@@ -82,7 +85,7 @@ int main()
             
                 col += ray_color( r, scene );
             }
-            col /= float(s);
+            col /= float(SAMPLES_AA);
 
             // Includes Gamma correction
             img[p++] = char( 255.99f*pow(col[0],0.4545f) );

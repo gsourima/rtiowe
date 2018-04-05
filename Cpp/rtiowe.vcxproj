@@ -117,6 +117,8 @@
     <ClInclude Include="include\camera.h" />
     <ClInclude Include="include\hitable.h" />
     <ClInclude Include="include\hitable_list.h" />
+    <ClInclude Include="include\materials.h" />
+    <ClInclude Include="include\randgen.h" />
     <ClInclude Include="include\ray.h" />
     <ClInclude Include="include\sphere.h" />
     <ClInclude Include="include\stb_image.h" />
