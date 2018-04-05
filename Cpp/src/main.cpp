@@ -12,7 +12,7 @@
 
 #define TMIN_EPS 0.001f
 #define NB_OBJS 5
-#define MAX_DEPTH 8
+#define MAX_DEPTH 32
 #define SAMPLES_AA 32
 
 vec3 ray_color( const ray& r, hitable* scene, int depth = 0 )
@@ -47,10 +47,47 @@ vec3 ray_color( const ray& r, hitable* scene, int depth = 0 )
     return t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f);
 }
 
+
+hitable* random_scene()
+{
+    int n = 500;
+    hitable** list = new hitable*[n+1];
+    list[0] =  new sphere(vec3(0,-1000,0), 1000, new lambertian(vec3(0.5, 0.5, 0.5), true));
+    int i = 1;
+    for ( int a = -11; a < 11; a++ )
+    {
+        for ( int b = -11; b < 11; b++ ) 
+        {
+            float choose_mat = randf();
+            vec3 center( a + 0.9f*randf(), 0.2f, b + 0.9f*randf() );
+
+            if ( (center-vec3(4,0.2f,0)).length() > 0.9f ) 
+            { 
+                if (choose_mat < 0.75f) {  // diffuse
+                    list[i++] = new sphere(center, 0.2f, new lambertian(vec3(randf()*randf(), randf()*randf(), randf()*randf())));
+                }
+                else if (choose_mat < 0.9f) { // metal
+                    list[i++] = new sphere(center, 0.2f,
+                        new metal(vec3(0.5f*(1 + randf()), 0.5f*(1 + randf()), 0.5f*(1 + randf())), 0.5f*randf()));
+                }
+                else {  // glass
+                    list[i++] = new sphere(center, 0.2f, new dielectric(1.5f));
+                }
+            }
+        }
+    }
+
+    list[i++] = new sphere(vec3(0, 1, 0), 1.0f, new dielectric(1.5f));
+    list[i++] = new sphere(vec3(-4, 1, 0), 1.0f, new lambertian(vec3(0.4f, 0.2f, 0.1f)));
+    list[i++] = new sphere(vec3(4, 1, 0), 1.0f, new metal(vec3(0.7f, 0.6f, 0.5f), 0.0f));
+
+    return new hitable_list(list,i);
+}
+
+
+
 int main()
 {
-    //int w = 240;
-    //int h = 135;
     const int w = 960;
     const int h = 540;
     const int pixels = w*h;
@@ -58,6 +95,7 @@ int main()
     char* img = new char[ w * h * 3 ];
     int p = 0;
 
+    /*
     vec3 lookfrom = vec3(5,3,4);
     vec3 lookat = 0;
     camera cam( lookfrom, lookat, vec3(0,1,0), 40, 16.0f/9.0f, 0.5f, (lookfrom-lookat).length() );
@@ -69,6 +107,13 @@ int main()
     list[3] = new sphere( vec3(-2,0,0),      -0.95f, new dielectric(1.5f) );
     list[4] = new sphere( vec3(2,0,0),      1, new metal(vec3(0.8f), 0.15f) );
     hitable* scene = new hitable_list( list, NB_OBJS );
+    */
+
+    vec3 lookfrom = vec3(13,2,3);
+    vec3 lookat = 0;
+    camera cam( lookfrom, lookat, vec3(0,1,0), 20, 16.0f/9.0f, 0.1f, 10 );
+
+    hitable* scene = random_scene();
 
     for ( int j = h-1; j >= 0; j-- )
     {
