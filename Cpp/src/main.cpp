@@ -11,8 +11,8 @@
 #include "stb_image_write.h"
 
 #define TMIN_EPS 0.001f
-#define NB_OBJS 4
-#define MAX_DEPTH 5
+#define NB_OBJS 6
+#define MAX_DEPTH 8
 #define SAMPLES_AA 32
 
 vec3 ray_color( const ray& r, hitable* scene, int depth = 0 )
@@ -60,14 +60,12 @@ int main()
 
     camera cam;
     hitable* list[NB_OBJS];
-    list[0] = new sphere( vec3(0,1,-3),       1.5f, new lambertian(vec3(0.8f, 0.3f, 0.3f)) );
-    list[1] = new sphere( vec3(0,-100.5f,-1), 100,  new lambertian(vec3(0.8f, 0.8f, 0)) );
-    list[3] = new sphere( vec3(-1,0,-1),      0.5f, new metal(vec3(0.8f, 0.8f, 0.8f), 0.2f) );
-    list[2] = new sphere( vec3(1,0,-1),       0.5f, new metal(vec3(0.8f, 0.6f, 0.2f), 0.9f) );
-    //list[0] = new sphere( vec3(0,1,-3),       1.5f, material::default );
-    //list[1] = new sphere( vec3(0,-100.5f,-1), 100,  material::default );
-    //list[3] = new sphere( vec3(-1,0,-1),      0.5f, material::default );
-    //list[2] = new sphere( vec3(1,0,-1),       0.5f, material::default );
+    list[0] = new sphere( vec3(0,1,-3),       1.5f, new lambertian(vec3(0.1f, 0.2f, 0.5f)) );
+    list[1] = new sphere( vec3(0,-100.5f,-1), 100,  new lambertian(vec3(0.6f, 0.8f, 0.2f)) );
+    list[2] = new sphere( vec3(-0.8f,0,-1),      0.5f, new dielectric(1.5f) );
+    list[3] = new sphere( vec3(1,0,-1),       0.5f, new metal(vec3(0.8f), 0.05f) );
+    list[4] = new sphere( vec3(0.2f,-0.1f,-0.8f), 0.30f, new dielectric(1.5f) );
+    list[5] = new sphere( vec3(0.2f,-0.1f,-0.8f), -0.29f, new dielectric(1.5f) );
     hitable* scene = new hitable_list( list, NB_OBJS );
 
     for ( int j = h-1; j >= 0; j-- )

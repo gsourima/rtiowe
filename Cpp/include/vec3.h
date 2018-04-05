@@ -35,6 +35,7 @@ public:
     inline float squared_length() const { return e[0]*e[0] + e[1]*e[1] + e[2]*e[2]; }
     inline void make_unit_vector();
     inline vec3 reflect( const vec3& n );
+    inline bool refract( const vec3& n, float ni_over_nt, vec3& refracted );
 
     float e[3];
 };
@@ -139,13 +140,29 @@ inline vec3& vec3::operator/=(const float t) {
     return *this;
 }
 
+
+inline vec3 unit_vector(vec3 v) {
+    return v / v.length();
+}
+
 inline vec3 vec3::reflect( const vec3& n ) { 
     return *this - 2*dot(*this,n)*n;
 }
 
+inline bool vec3::refract( const vec3& n, float ni_over_nt, vec3& refracted )
+{
+    vec3 v = unit_vector(*this);
 
-inline vec3 unit_vector(vec3 v) {
-    return v / v.length();
+    float dvn = dot(v, n);
+    float discriminant = 1 - ni_over_nt*ni_over_nt*(1-dvn*dvn);
+
+    if ( discriminant > 0 )
+    {
+        refracted = ni_over_nt * (v - n*dvn) - n*sqrt(discriminant);
+        return true;
+    }
+    else
+        return false;
 }
 
 #endif
