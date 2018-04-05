@@ -19,14 +19,22 @@ class lambertian : public material
 public:
 
     vec3 albedo;
+    bool checker;
 
-    lambertian( const vec3& v ) : albedo(v) {}
+    lambertian( const vec3& v, bool check = false ) : albedo(v), checker(check) {}
 
     virtual bool scatter( const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered ) const
     {
         scattered = ray( rec.P, rec.N + random_in_unit_sphere() );
 
         attenuation = albedo;
+
+        if ( checker) 
+        {
+            if ( ( int(floorf(2*rec.P.x())+floorf(2*rec.P.z())) % 2 ) == 0 )
+                attenuation *= 0.5f;
+
+        }
 
         return true;
     }

@@ -5,12 +5,16 @@
 #include <cmath>
 
 #include "ray.h"
+#include "randgen.h"
 
 class camera
 {
 public:
-    camera( vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect )
+    camera( vec3 lookfrom, vec3 lookat, vec3 vup, float vfov, float aspect, float aperture = 0, float focus_dist = 1 )
     {
+        lens_radius = 0.5f * aperture;
+        focus_distance = focus_dist;
+
         set_pose( lookfrom, lookat, vup );
         set_vfov( vfov, aspect );
         update_screen();
@@ -33,16 +37,21 @@ public:
 
     void update_screen()
     {
-        corner_ll = origin - half_width * u - half_height * v - w;
-        horiz = 2*half_width * u;
-        vert = 2*half_height * v;
+        corner_ll = origin - focus_distance * ( half_width * u + half_height * v + w );
+        horiz = 2 * half_width * u * focus_distance;
+        vert = 2 * half_height * v * focus_distance;
     }
 
     ray get_ray( float s, float t )
     {
-        return ray( origin, corner_ll + s*horiz + t*vert - origin );
+        vec3 rd = lens_radius * random_in_unit_disk();
+        vec3 offset = u * rd.x() + v * rd.y();
+        return ray( origin + offset, corner_ll + s*horiz + t*vert - origin - offset );
     }
 
+    // Lens params
+    float lens_radius;
+    float focus_distance;
     // Pose params
     vec3 origin;
     vec3 u;

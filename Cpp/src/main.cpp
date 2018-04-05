@@ -58,11 +58,13 @@ int main()
     char* img = new char[ w * h * 3 ];
     int p = 0;
 
-    camera cam( vec3(-3,3,3), vec3(0), vec3(0,1,0), 40, 16.0f/9.0f );
+    vec3 lookfrom = vec3(5,3,4);
+    vec3 lookat = 0;
+    camera cam( lookfrom, lookat, vec3(0,1,0), 40, 16.0f/9.0f, 0.5f, (lookfrom-lookat).length() );
 
     hitable* list[NB_OBJS];
     list[0] = new sphere( vec3(0),       1, new lambertian(vec3(0.1f, 0.2f, 0.5f)) );
-    list[1] = new sphere( vec3(0,-1001,0), 1000,  new lambertian(vec3(0.3f, 0.5f, 0.1f)) );
+    list[1] = new sphere( vec3(0,-1001.1f,0), 1000,  new lambertian(vec3(0.3f, 0.5f, 0.1f), true) );
     list[2] = new sphere( vec3(-2,0,0),      1, new dielectric(1.5f) );
     list[3] = new sphere( vec3(-2,0,0),      -0.95f, new dielectric(1.5f) );
     list[4] = new sphere( vec3(2,0,0),      1, new metal(vec3(0.8f), 0.15f) );
