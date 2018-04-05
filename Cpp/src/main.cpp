@@ -6,18 +6,22 @@
 #include "sphere.h"
 #include "randgen.h"
 #include "materials.h"
+#include "timing.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 #define TMIN_EPS 0.001f
 #define NB_OBJS 5
-#define MAX_DEPTH 32
-#define SAMPLES_AA 32
+#define MAX_DEPTH 50
+#define SAMPLES_AA 256
+
+static unsigned int rays_cast = 0;
 
 vec3 ray_color( const ray& r, hitable* scene, int depth = 0 )
 {
     hit_record rec;
+    rays_cast++;
 
     if ( scene->hit( r, TMIN_EPS, std::numeric_limits<float>::max(), rec ) )
     {        
@@ -88,6 +92,9 @@ hitable* random_scene()
 
 int main()
 {
+    rt_timer timer_total(true);
+    rays_cast = 0;
+
     const int w = 960;
     const int h = 540;
     const int pixels = w*h;
@@ -95,31 +102,33 @@ int main()
     char* img = new char[ w * h * 3 ];
     int p = 0;
 
-    /*
     vec3 lookfrom = vec3(5,3,4);
     vec3 lookat = 0;
     camera cam( lookfrom, lookat, vec3(0,1,0), 40, 16.0f/9.0f, 0.5f, (lookfrom-lookat).length() );
 
     hitable* list[NB_OBJS];
-    list[0] = new sphere( vec3(0),       1, new lambertian(vec3(0.1f, 0.2f, 0.5f)) );
-    list[1] = new sphere( vec3(0,-1001.1f,0), 1000,  new lambertian(vec3(0.3f, 0.5f, 0.1f), true) );
-    list[2] = new sphere( vec3(-2,0,0),      1, new dielectric(1.5f) );
-    list[3] = new sphere( vec3(-2,0,0),      -0.95f, new dielectric(1.5f) );
-    list[4] = new sphere( vec3(2,0,0),      1, new metal(vec3(0.8f), 0.15f) );
+    list[0] = new sphere( vec3(0),               1, new lambertian(vec3(0.1f, 0.2f, 0.5f)) );
+    list[1] = new sphere( vec3(0,-1001.1f,0), 1000, new lambertian(vec3(0.3f, 0.5f, 0.1f), true) );
+    list[2] = new sphere( vec3(-2,0,0),          1, new dielectric(1.5f) );
+    list[3] = new sphere( vec3(-2,0,0),     -0.95f, new dielectric(1.5f) );
+    list[4] = new sphere( vec3(2,0,0),           1, new metal(vec3(0.8f), 0.15f) );
     hitable* scene = new hitable_list( list, NB_OBJS );
-    */
 
-    vec3 lookfrom = vec3(13,2,3);
-    vec3 lookat = 0;
-    camera cam( lookfrom, lookat, vec3(0,1,0), 20, 16.0f/9.0f, 0.1f, 10 );
+    //vec3 lookfrom = vec3(13,2,3);
+    //vec3 lookat = 0;
+    //camera cam( lookfrom, lookat, vec3(0,1,0), 20, 16.0f/9.0f, 0.1f, 10 );
 
-    hitable* scene = random_scene();
+    //hitable* scene = random_scene();
+
+    rt_timer timer_render;
 
     for ( int j = h-1; j >= 0; j-- )
     {
         for ( int i = 0; i < w; i++ )
         {
             vec3 col( 0 );
+
+            timer_render.play();
 
             for ( int k = 0; k < SAMPLES_AA ; k++ )
             {
@@ -131,6 +140,8 @@ int main()
                 col += ray_color( r, scene );
             }
             col /= float(SAMPLES_AA);
+
+            timer_render.pause();
 
             // Includes Gamma correction
             img[p++] = char( 255.99f*pow(col[0],0.4545f) );
@@ -145,7 +156,22 @@ int main()
             printf( "Rendering in progress... [ %5.1f%% ]\r", progress );
         }
     }
-    printf( "\nDone!" );
+    printf( "\nDone!\n\n" );
 
     stbi_write_png( "out.png", w, h, 3, img, 0 );
+
+    timer_total.pause();
+
+    // Stats
+    printf( "Rendering stats\n" );
+    printf( "- Total processing time (s)... %.3lf\n", timer_total.time );
+    printf( "- rendering time (s).......... %.3lf\n", timer_render.time );
+    printf( "- max ray depth............... %d\n", MAX_DEPTH );
+    printf( "- samples per pixel........... %d\n", SAMPLES_AA );
+    printf( "- M rays cast................. %.6lf\n", 0.000001 * rays_cast );
+    printf( "- M rays / sec................ %.6lf\n\n", 0.000001 * rays_cast / timer_render.time );
+
+    // To pause the terminal
+    printf( "Press enter to exit...\n" );
+    char c = std::getchar();
 }
