@@ -1,5 +1,6 @@
 Debug/
 Release/
+Release-opt/
 .vs/
 rtiowe.VC.db
 rtiowe.VC.VC.opendb

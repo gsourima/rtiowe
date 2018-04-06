@@ -6,7 +6,7 @@
 
 #include "vec3.h"
 
-static void rand_init() { std::srand( (unsigned int) std::time(NULL)); }
+static void rand_init() { std::srand( (unsigned int) 42 ); }
 
 static float randf() { return rand() / float( RAND_MAX ); }
 

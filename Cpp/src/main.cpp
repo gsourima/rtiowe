@@ -1,6 +1,10 @@
 #include <climits>
 #include <cstdio>
 
+#ifdef GS_OPTIS
+#include <omp.h>
+#endif
+
 #include "camera.h"
 #include "hitable_list.h"
 #include "sphere.h"
@@ -100,7 +104,6 @@ int main()
     const int pixels = w*h;
 
     char* img = new char[ w * h * 3 ];
-    int p = 0;
 
     vec3 lookfrom = vec3(5,3,4);
     vec3 lookat = 0;
@@ -119,16 +122,18 @@ int main()
     //camera cam( lookfrom, lookat, vec3(0,1,0), 20, 16.0f/9.0f, 0.1f, 10 );
 
     //hitable* scene = random_scene();
+    
+    int nlines = 0;
+    rt_timer timer_render(true);
 
-    rt_timer timer_render;
-
+    #ifdef GS_OPTIS
+    #pragma omp parallel for
+    #endif
     for ( int j = h-1; j >= 0; j-- )
     {
         for ( int i = 0; i < w; i++ )
         {
             vec3 col( 0 );
-
-            timer_render.play();
 
             for ( int k = 0; k < SAMPLES_AA ; k++ )
             {
@@ -141,21 +146,27 @@ int main()
             }
             col /= float(SAMPLES_AA);
 
-            timer_render.pause();
-
             // Includes Gamma correction
-            img[p++] = char( 255.99f*pow(col[0],0.4545f) );
-            img[p++] = char( 255.99f*pow(col[1],0.4545f) );
-            img[p++] = char( 255.99f*pow(col[2],0.4545f) );
+            int p = 3*(w*(h-1-j)+i);
+            img[p]   = char( 255.99f*pow(col[0],0.4545f) );
+            img[p+1] = char( 255.99f*pow(col[1],0.4545f) );
+            img[p+2] = char( 255.99f*pow(col[2],0.4545f) );
         }
 
-        if ( (j%4) == 0 )
+        #ifdef GS_OPTIS
+        #pragma omp atomic
+        #endif
+        nlines++;
+
+        if ( (nlines%4) == 0 )
         {
-            float progress = 100 * p / float( 3 * pixels );
+            float progress = 100 * (nlines) / float(h);
 
             printf( "Rendering in progress... [ %5.1f%% ]\r", progress );
         }
     }
+    timer_render.pause();
+
     printf( "\nDone!\n\n" );
 
     stbi_write_png( "out.png", w, h, 3, img, 0 );
@@ -163,7 +174,11 @@ int main()
     timer_total.pause();
 
     // Stats
+    #ifdef GS_OPTIS
+    printf( "Rendering stats [Optimized mode]\n" );
+    #else
     printf( "Rendering stats\n" );
+    #endif
     printf( "- Total processing time (s)... %.3lf\n", timer_total.time );
     printf( "- rendering time (s).......... %.3lf\n", timer_render.time );
     printf( "- max ray depth............... %d\n", MAX_DEPTH );
