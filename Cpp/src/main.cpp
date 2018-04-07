@@ -1,5 +1,6 @@
 #include <climits>
 #include <cstdio>
+#include <algorithm> // std::min
 
 #ifdef GS_OPTIS
 #include <omp.h>
@@ -7,22 +8,50 @@
 
 #include "camera.h"
 #include "hitable_list.h"
+#include "materials.h"
 #include "sphere.h"
 #include "randgen.h"
-#include "materials.h"
 #include "timing.h"
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
 #define TMIN_EPS 0.001f
-#define NB_OBJS 5
-#define MAX_DEPTH 50
-#define SAMPLES_AA 256
+#define NB_OBJS 6
+#define MAX_DEPTH 6
+#define SAMPLES_AA 64
 
 static unsigned int rays_cast = 0;
 
-vec3 ray_color( const ray& r, hitable* scene, int depth = 0 )
+hitable* hitable::scene = NULL;
+
+vec3 trace_ao( const ray& r, hitable* scene )
+{
+    hit_record rec;
+    rays_cast++;
+
+    if ( scene->hit( r, TMIN_EPS, std::numeric_limits<float>::max(), rec ) )
+    {
+        vec3 ao_dir = rec.N + random_in_unit_sphere();
+
+        if ( scene->hit( ray(rec.P, ao_dir), TMIN_EPS, std::numeric_limits<float>::max(), rec ) )
+            return 0;
+
+        //else
+        //{
+        //    vec3 unit_dir = unit_vector( ao_dir );
+        //    float t = abs(unit_dir.y()); // 0.5f * unit_dir.y() + 0.5f;
+        //    return 0.6f * ( t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f) );
+        //}
+    }
+
+    return 1;
+    //vec3 unit_dir = unit_vector( r.direction() );
+    //float t = abs(unit_dir.y()); // 0.5f * unit_dir.y() + 0.5f;
+    //return 0.6f * ( t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f) );
+}
+
+vec3 trace_light( const ray& r, hitable* scene, int depth = 0 )
 {
     hit_record rec;
     rays_cast++;
@@ -32,27 +61,17 @@ vec3 ray_color( const ray& r, hitable* scene, int depth = 0 )
         // Outputting material evaluation
         ray scattered;
         vec3 attenuation;
-        if ( depth < MAX_DEPTH && rec.mat->scatter( r, rec, attenuation, scattered ) )
+		vec3 direct_lighting = vec3(0);
+        if ( depth < MAX_DEPTH && rec.mat->scatter( r, rec, attenuation, scattered, direct_lighting, rays_cast ) )
         {
-            return attenuation * ray_color( scattered, scene, depth+1 );
+            return direct_lighting + attenuation * trace_light( scattered, scene, depth+1 );
         }
-        else return 0;
-
-        // Outputting diffuse reflection
-        // vec3 target = rec.P + rec.N + random_in_unit_sphere();
-        // return 0.5f * ray_color( ray( rec.P, target-rec.P ), scene );
-
-        // Outputting ids as colors
-        // int id = 1 + rec.id;
-        // return vec3( id/float(N), (N-id)/float(N), (id+N)/float(2*N) );
-        
-        // Outputting normal
-        // return 0.5f * rec.N + 0.5f;
+        else return rec.mat->emission;
     }
 
     vec3 unit_dir = unit_vector( r.direction() );
     float t = abs(unit_dir.y()); // 0.5f * unit_dir.y() + 0.5f;
-    return t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f);
+    return 0.6f * ( t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f) );
 }
 
 
@@ -111,17 +130,19 @@ int main()
 
     hitable* list[NB_OBJS];
     list[0] = new sphere( vec3(0),               1, new lambertian(vec3(0.1f, 0.2f, 0.5f)) );
-    list[1] = new sphere( vec3(0,-1001.1f,0), 1000, new lambertian(vec3(0.3f, 0.5f, 0.1f), true) );
+    list[1] = new sphere( vec3(0,-1001.1f,0), 1000, new lambertian(vec3(0.5f,0.5f,0.65f), true) );
     list[2] = new sphere( vec3(-2,0,0),          1, new dielectric(1.5f) );
     list[3] = new sphere( vec3(-2,0,0),     -0.95f, new dielectric(1.5f) );
     list[4] = new sphere( vec3(2,0,0),           1, new metal(vec3(0.8f), 0.15f) );
-    hitable* scene = new hitable_list( list, NB_OBJS );
+    list[5] = new sphere( vec3(-2,1,1.5f),    0.5f, new emissive(25*vec3(1.5f,1.2f,1)) );
+	//list[5] = new sphere(vec3(0, 1, -2), 0.5f, new emissive(25 * vec3(1.5f, 1.2f, 1)));
+    hitable::scene = new hitable_list( list, NB_OBJS );
 
     //vec3 lookfrom = vec3(13,2,3);
     //vec3 lookat = 0;
     //camera cam( lookfrom, lookat, vec3(0,1,0), 20, 16.0f/9.0f, 0.1f, 10 );
 
-    //hitable* scene = random_scene();
+    //hitable::scene = random_scene();
     
     int nlines = 0;
     rt_timer timer_render(true);
@@ -142,15 +163,16 @@ int main()
 
                 ray r = cam.get_ray(u, v);
             
-                col += ray_color( r, scene );
+                col += trace_light( r, hitable::scene );
+                //col += trace_ao( r, hitable::scene );
             }
             col /= float(SAMPLES_AA);
 
             // Includes Gamma correction
             int p = 3*(w*(h-1-j)+i);
-            img[p]   = char( 255.99f*pow(col[0],0.4545f) );
-            img[p+1] = char( 255.99f*pow(col[1],0.4545f) );
-            img[p+2] = char( 255.99f*pow(col[2],0.4545f) );
+            img[p]   = char( std::min( 255.99f, 255.99f*pow(col[0],0.4545f) ) );
+            img[p+1] = char( std::min( 255.99f, 255.99f*pow(col[1],0.4545f) ) );
+            img[p+2] = char( std::min( 255.99f, 255.99f*pow(col[2],0.4545f) ) );
         }
 
         #ifdef GS_OPTIS
@@ -185,6 +207,8 @@ int main()
     printf( "- samples per pixel........... %d\n", SAMPLES_AA );
     printf( "- M rays cast................. %.6lf\n", 0.000001 * rays_cast );
     printf( "- M rays / sec................ %.6lf\n\n", 0.000001 * rays_cast / timer_render.time );
+
+    system( "\"C:\\Program Files (x86)\\Google\\Picasa3\\PicasaPhotoViewer.exe\" out.png" );
 
     // To pause the terminal
     printf( "Press enter to exit...\n" );
