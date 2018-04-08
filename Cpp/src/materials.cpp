@@ -5,7 +5,7 @@
 
 #include "sphere.h"
 
-#define SAMPLE_LIGHTS
+//#define SAMPLE_LIGHTS
 
 material* material::default = new lambertian(1);
 

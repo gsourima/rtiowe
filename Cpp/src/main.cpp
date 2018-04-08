@@ -19,7 +19,7 @@
 #define TMIN_EPS 0.001f
 #define NB_OBJS 6
 #define MAX_DEPTH 6
-#define SAMPLES_AA 256
+#define SAMPLES_AA 64
 
 static unsigned int rays_cast = 0;
 
