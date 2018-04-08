@@ -26,4 +26,14 @@ static vec3 random_in_unit_disk()
     return p;
 }
 
+static vec3 random_unit_dir()
+{
+	float z = randf() * 2 - 1;
+	float a = randf() * 2 * float(M_PI);
+	float r = sqrtf(1 - z * z);
+	float x = r * cosf(a);
+	float y = r * sinf(a);
+	return vec3(x, y, z);
+}
+
 #endif

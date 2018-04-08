@@ -32,7 +32,7 @@ vec3 trace_ao( const ray& r, hitable* scene )
 
     if ( scene->hit( r, TMIN_EPS, std::numeric_limits<float>::max(), rec ) )
     {
-        vec3 ao_dir = rec.N + random_in_unit_sphere();
+        vec3 ao_dir = rec.N + random_unit_dir();
 
         if ( scene->hit( ray(rec.P, ao_dir), TMIN_EPS, std::numeric_limits<float>::max(), rec ) )
             return 0;
@@ -51,9 +51,13 @@ vec3 trace_ao( const ray& r, hitable* scene )
     //return 0.6f * ( t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f) );
 }
 
-vec3 trace_light( const ray& r, hitable* scene, int depth = 0 )
+//#define DIRECT_LIGHTING_ONLY
+
+vec3 trace_light(const ray& r, hitable* scene, int depth = 0 )
 {
     hit_record rec;
+
+	#pragma omp atomic
     rays_cast++;
 
     if ( scene->hit( r, TMIN_EPS, std::numeric_limits<float>::max(), rec ) )
@@ -62,11 +66,15 @@ vec3 trace_light( const ray& r, hitable* scene, int depth = 0 )
         ray scattered;
         vec3 attenuation;
 		vec3 direct_lighting = vec3(0);
-        if ( depth < MAX_DEPTH && rec.mat->scatter( r, rec, attenuation, scattered, direct_lighting, rays_cast ) )
+        if ( depth < MAX_DEPTH && rec.mat->scatter( r, rec, attenuation, scattered, direct_lighting, rays_cast) )
         {
-            return direct_lighting + attenuation * trace_light( scattered, scene, depth+1 );
+#ifdef DIRECT_LIGHTING_ONLY
+			return direct_lighting;
+#else
+            return direct_lighting + attenuation * trace_light( scattered, scene, depth+1);
+#endif
         }
-        else return rec.mat->emission;
+		else return rec.mat->emission;
     }
 
     vec3 unit_dir = unit_vector( r.direction() );
@@ -163,7 +171,7 @@ int main()
 
                 ray r = cam.get_ray(u, v);
             
-                col += trace_light( r, hitable::scene );
+                col += trace_light( r, hitable::scene);
                 //col += trace_ao( r, hitable::scene );
             }
             col /= float(SAMPLES_AA);
