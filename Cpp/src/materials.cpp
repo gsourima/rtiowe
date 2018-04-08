@@ -11,7 +11,8 @@ material* material::default = new lambertian(1);
 
 bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, vec3& direct_light, unsigned int& rays_cast) const
 {
-	scattered = ray(rec.P, rec.N + random_unit_dir());
+	vec3 dir = rec.N + random_unit_dir();
+	scattered.set(rec.P, dir);
 
 	attenuation = albedo;
 
@@ -22,12 +23,15 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 	}
 
 #ifdef SAMPLE_LIGHTS
+	hit_record rec_light;
+
 	for each (sphere* sphere_light in sphere::lights)
 	{
 		float r = sphere_light->radius;
 
 		// Naive GS version (equivalent to Aras' method)
-		ray light_ray(rec.P, unit_vector(sphere_light->center + random_unit_dir() * r - rec.P));
+		dir = unit_vector(sphere_light->center + random_unit_dir() * r - rec.P);
+		ray light_ray(rec.P, dir);
 
 		// Aras sampling method
         // create a random direction towards sphere
@@ -45,8 +49,6 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 		//l.make_unit_vector();
 		//ray light_ray(rec.P, l);
 
-		hit_record rec_light;
-
 		#pragma omp atomic	
 		rays_cast++;
 
@@ -58,13 +60,13 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 				// float dist2 = (rec_light.P - rec.P).squared_length();
 				float dist2 = (sphere_light->center - rec.P).squared_length();
 				vec3 scale = attenuation / ( 4 * float(M_PI) * r*r );
-				scale *= std::max(0.0f, dot(-light_ray.direction(), unit_vector(rec_light.N)));
+				scale *= std::max(0.0f, dot(-light_ray.dirref(), rec_light.N));
 				scale *= std::min(1.0f, 1.0f / dist2 );
 
 				// Aras version (solid angle)
 				//vec3 scale = attenuation * ( 2 - 2 * cosAMax );
 
-				direct_light += (scale * sphere_light->mat->emission) * std::max(0.0f, dot(light_ray.direction(), unit_vector(rec.N)));
+				direct_light += (scale * sphere_light->mat->emission) * std::max(0.0f, dot(light_ray.dirref(), rec.N));
 			}
 		}
 	}
@@ -75,40 +77,40 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 
 bool metal::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, vec3& direct_light, unsigned int& rays_cast) const
 {
-	vec3 reflected = r_in.direction().reflect(rec.N) + fuzz*random_unit_dir();
+	vec3 reflected = unit_vector(r_in.dirref()).reflect(rec.N) + fuzz*random_unit_dir();
 
-	scattered = ray(rec.P, unit_vector(reflected));
+	scattered.set(rec.P, unit_vector(reflected));
 
 	attenuation = albedo;
 
-	return (dot(scattered.direction(), rec.N) > 0);
+	return (dot(scattered.dirref(), rec.N) > 0);
 }
 
 bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, vec3& direct_light, unsigned int& rays_cast) const
 {
 	vec3 outward_normal;
-	vec3 reflected = unit_vector(r_in.direction().reflect(rec.N));
+	vec3 reflected = unit_vector(r_in.dirref()).reflect(rec.N);
 	vec3 refracted;
 	float ni_over_nt;
 	float reflect_prob;
 	float cosine;
-	float din = dot(r_in.direction(), rec.N);
+	float din = dot(r_in.dirref(), rec.N);
 	attenuation = vec3(1);
 
 	if (din > 0)
 	{
 		outward_normal = -rec.N;
 		ni_over_nt = ridx;
-		cosine = ridx * din / r_in.direction().length();
+		cosine = ridx * din / r_in.dirref().length();
 	}
 	else
 	{
 		outward_normal = rec.N;
 		ni_over_nt = 1 / ridx;
-		cosine = -din / r_in.direction().length();
+		cosine = -din / r_in.dirref().length();
 	}
 
-	if (r_in.direction().refract(outward_normal, ni_over_nt, refracted))
+	if (r_in.dirref().refract(outward_normal, ni_over_nt, refracted))
 	{
 		reflect_prob = schlick(cosine, ridx);
 	}
@@ -118,9 +120,9 @@ bool dielectric::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 	}
 
 	if (randf() < reflect_prob)
-		scattered = ray(rec.P, reflected);
+		scattered.set(rec.P, reflected);
 	else
-		scattered = ray(rec.P, refracted);
+		scattered.set(rec.P, refracted);
 
 	return true;
 }

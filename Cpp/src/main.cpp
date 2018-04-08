@@ -19,7 +19,7 @@
 #define TMIN_EPS 0.001f
 #define NB_OBJS 6
 #define MAX_DEPTH 6
-#define SAMPLES_AA 64
+#define SAMPLES_AA 256
 
 static unsigned int rays_cast = 0;
 
@@ -46,7 +46,7 @@ vec3 trace_ao( const ray& r, hitable* scene )
     }
 
     return 1;
-    //vec3 unit_dir = unit_vector( r.direction() );
+    //vec3 unit_dir = unit_vector( r.dirref() );
     //float t = abs(unit_dir.y()); // 0.5f * unit_dir.y() + 0.5f;
     //return 0.6f * ( t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f) );
 }
@@ -77,7 +77,7 @@ vec3 trace_light(const ray& r, hitable* scene, int depth = 0 )
 		else return rec.mat->emission;
     }
 
-    vec3 unit_dir = unit_vector( r.direction() );
+    vec3 unit_dir = unit_vector( r.dirref() );
     float t = abs(unit_dir.y()); // 0.5f * unit_dir.y() + 0.5f;
     return 0.6f * ( t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f) );
 }

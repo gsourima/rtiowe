@@ -35,7 +35,7 @@ public:
     inline float squared_length() const { return e[0]*e[0] + e[1]*e[1] + e[2]*e[2]; }
     inline void make_unit_vector();
     inline vec3 reflect( const vec3& n );
-    inline bool refract( const vec3& n, float ni_over_nt, vec3& refracted );
+    inline bool refract( const vec3& n, float ni_over_nt, vec3& refracted ) const;
 
     float e[3];
 };
@@ -53,7 +53,7 @@ inline std::ostream& operator<<(std::ostream &os, const vec3 &t) {
 }
 
 inline void vec3::make_unit_vector() {
-    float k = 1.0f / sqrt(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]);
+    float k = 1.0f / sqrtf(e[0]*e[0] + e[1]*e[1] + e[2]*e[2]);
     e[0] *= k; e[1] *= k; e[2] *= k;
 }
 
@@ -149,7 +149,7 @@ inline vec3 vec3::reflect( const vec3& n ) {
     return *this - 2*dot(*this,n)*n;
 }
 
-inline bool vec3::refract( const vec3& n, float ni_over_nt, vec3& refracted )
+inline bool vec3::refract( const vec3& n, float ni_over_nt, vec3& refracted ) const
 {
     vec3 v = unit_vector(*this);
 
