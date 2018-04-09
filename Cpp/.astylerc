@@ -1,0 +1,17 @@
+--style=allman
+--indent=spaces=4
+--indent-classes
+--indent-switches
+--indent-namespaces
+--indent-after-parens
+--indent-preproc-cond
+--indent-col1-comments
+--pad-oper
+--pad-comma
+--pad-paren-in
+--pad-header
+--align-pointer=type
+--break-closing-braces
+--keep-one-line-blocks
+--keep-one-line-statements
+--recursive

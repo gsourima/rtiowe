@@ -18,12 +18,12 @@ struct hit_record
 
 class hitable
 {
-public:
-    hitable() { id = object_id_cpt++; }
-    virtual bool hit( const ray& r, float t_min, float t_max, hit_record& rec ) const = 0;
-    int id;
+    public:
+        hitable() { id = object_id_cpt++; }
+        virtual bool hit( const ray& r, float t_min, float t_max, hit_record& rec ) const = 0;
+        int id;
 
-	static hitable* scene;
+        static hitable* scene;
 };
 
 #endif

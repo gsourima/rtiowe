@@ -5,13 +5,13 @@
 
 class hitable_list: public hitable
 {
-public:
-    hitable_list() : hitable() { list = NULL; list_size = 0; }
-    hitable_list( hitable** l, int n ) : hitable() { list = l; list_size = n; }
-    virtual bool hit( const ray& r, float t_min, float t_max, hit_record& rec ) const;
+    public:
+        hitable_list() : hitable() { list = NULL; list_size = 0; }
+        hitable_list( hitable** l, int n ) : hitable() { list = l; list_size = n; }
+        virtual bool hit( const ray& r, float t_min, float t_max, hit_record& rec ) const;
 
-    hitable** list;
-    int list_size;
+        hitable** list;
+        int list_size;
 };
 
 bool hitable_list::hit( const ray& r, float t_min, float t_max, hit_record& rec ) const
