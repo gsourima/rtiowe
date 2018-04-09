@@ -6,9 +6,9 @@
 
 #include "vec3.h"
 
-static const float kInvRandMax = 1.0f / float(RAND_MAX);
+// Note: Also might worth looking at: http://www.iquilezles.org/www/articles/sfrand/sfrand.htm
 
-static void rand_init() { std::srand( (unsigned int) 42 ); }
+// ------------------------------------------------- //
 
 static uint32_t rand_state = 54238147;
 
@@ -23,8 +23,17 @@ static inline uint32_t XorShift32()
 	return x;
 }
 
-//static float randf() { return rand() * kInvRandMax; }
 static float randf() { return (XorShift32() & 0xFFFFFF) / 16777216.0f; }
+
+// ------------------------------------------------- //
+
+//static const float kInvRandMax = 1.0f / float(RAND_MAX);
+
+static void rand_init() { std::srand( (unsigned int) 42 ); }
+
+//static float randf() { return rand() * kInvRandMax; }
+
+// ------------------------------------------------- //
 
 static vec3 random_in_unit_sphere()
 {

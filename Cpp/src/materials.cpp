@@ -18,7 +18,9 @@ bool lambertian::scatter(const ray& r_in, const hit_record& rec, vec3& attenuati
 
 	if (checker)
 	{
-		if ((int(floorf(2 * rec.P.x()) + floorf(2 * rec.P.z())) % 2) == 0)
+        vec3 v = 2 * ( 100000 + rec.P );
+        int idx = int(v.x()) + int(v.z()) + int(v.y());
+		if ( ( idx % 2 ) == 0 )
 			attenuation *= 0.5f;
 	}
 

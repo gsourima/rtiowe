@@ -98,6 +98,10 @@ hitable* random_scene()
 
             if ( (center-vec3(4,0.2f,0)).length() > 0.9f ) 
             { 
+                //if (choose_mat < 0.05f) {  // emissive
+                //    list[i++] = new sphere(center, 0.2f, new emissive(20+10*vec3(randf(), randf(), randf())));
+                //}
+                //else
                 if (choose_mat < 0.75f) {  // diffuse
                     list[i++] = new sphere(center, 0.2f, new lambertian(vec3(randf()*randf(), randf()*randf(), randf()*randf())));
                 }
@@ -128,29 +132,34 @@ int main()
 
     const int w = 960;
     const int h = 540;
-    const int pixels = w*h;
 
     char* img = new char[ w * h * 3 ];
+
+    // ----------------------------- //
 
     vec3 lookfrom = vec3(5,3,4);
     vec3 lookat = 0;
     camera cam( lookfrom, lookat, vec3(0,1,0), 40, 16.0f/9.0f, 0.5f, (lookfrom-lookat).length() );
 
     hitable* list[NB_OBJS];
-    list[0] = new sphere( vec3(0),               1, new lambertian(vec3(0.1f, 0.2f, 0.5f)) );
+    list[0] = new sphere( vec3(0),               1, new lambertian(vec3(0.1f, 0.2f, 0.5f) ) );
     list[1] = new sphere( vec3(0,-1001.1f,0), 1000, new lambertian(vec3(0.5f,0.5f,0.65f), true) );
     list[2] = new sphere( vec3(-2,0,0),          1, new dielectric(1.5f) );
     list[3] = new sphere( vec3(-2,0,0),     -0.95f, new dielectric(1.5f) );
     list[4] = new sphere( vec3(2,0,0),           1, new metal(vec3(0.8f), 0.15f) );
     list[5] = new sphere( vec3(-2,1,1.5f),    0.5f, new emissive(25*vec3(1.5f,1.2f,1)) );
-	//list[5] = new sphere(vec3(0, 1, -2), 0.5f, new emissive(25 * vec3(1.5f, 1.2f, 1)));
+    //list[5] = new sphere(vec3(0, 1, -2), 0.5f, new emissive(25 * vec3(1.5f, 1.2f, 1)));
     hitable::scene = new hitable_list( list, NB_OBJS );
+
+    // ----------------------------- //
 
     //vec3 lookfrom = vec3(13,2,3);
     //vec3 lookat = 0;
     //camera cam( lookfrom, lookat, vec3(0,1,0), 20, 16.0f/9.0f, 0.1f, 10 );
 
     //hitable::scene = random_scene();
+
+    // ----------------------------- //
     
     int nlines = 0;
     rt_timer timer_render(true);
@@ -206,6 +215,7 @@ int main()
     // Stats
     #ifdef GS_OPTIS
     printf( "Rendering stats [Optimized mode]\n" );
+    printf( "- number of threads........... %d\n", omp_get_max_threads() );
     #else
     printf( "Rendering stats\n" );
     #endif

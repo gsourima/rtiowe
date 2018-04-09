@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="1">
+    <includedir>
+        <dir name="include/"/>
+        <dir name="src/"/>
+    </includedir>
+    <defines>
+        <define name="_CRT_SECURE_NO_WARNINGS"/>
+        <define name="_USE_MATH_DEFINES"/>
+        <define name="GS_OPTIS"/>
+        <define name=""/>
+    </defines>
+</project>

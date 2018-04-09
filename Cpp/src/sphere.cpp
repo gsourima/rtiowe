@@ -13,6 +13,7 @@ sphere::sphere(const vec3& c, float r, material* m) : hitable(), center(c), radi
 bool sphere::hit(const ray& r, float t_min, float t_max, hit_record& rec) const
 {
 	// Note: some 2's have been simplified out
+    // Note: can be optimized if assuming ray direction is normalized (a goes out)
 	vec3 oc = r.origref() - center;
 	const vec3& rdir = r.dirref();
 	float a = dot(rdir, rdir);
