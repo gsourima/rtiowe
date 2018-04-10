@@ -22,7 +22,7 @@ bool hitable_list::hit( const ray& r, float t_min, float t_max, hit_record& rec 
 
     for ( int i = 0; i < list_size; i++ )
     {
-        if ( list[i]->hit( r, t_min, closest, rec_temp ) && rec_temp.t < closest )
+        if ( list[i]->hit( r, t_min, closest, rec_temp ) )
         {
             hit_something = true;
             closest = rec_temp.t;

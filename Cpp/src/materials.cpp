@@ -5,7 +5,7 @@
 
 #include "sphere.h"
 
-//#define SAMPLE_LIGHTS
+#define SAMPLE_LIGHTS
 
 material* material::default = new lambertian( 1 );
 
@@ -29,27 +29,22 @@ bool lambertian::scatter( const ray& r_in, const hit_record& rec, vec3& attenuat
 
     for each ( sphere * sphere_light in sphere::lights )
     {
-        float r = sphere_light->radius;
+        const vec3& o = rec.P;
+        const vec3& c = sphere_light->center;
+        const float r = sphere_light->radius;
 
-        // Naive GS version (equivalent to Aras' method)
-        dir = unit_vector( sphere_light->center + random_unit_dir() * r - rec.P );
-        ray light_ray( rec.P, dir );
+        vec3 oc = c - o;
+        vec3 w = unit_vector( oc );
+        vec3 u = unit_vector( cross( fabs(w.x())>.01f ? vec3(0,1,0) : vec3(1,0,0), w ) );
+        vec3 v = cross( w, u );
+        float cosAMax = sqrtf( 1 - r * r / oc.squared_length() );
+        float eps1 = randf(), eps2 = randf();
+        float cosA = 1 - eps1 + eps1 * cosAMax;
+        float sinA = sqrtf( 1 - cosA * cosA );
+        float phi  = 2 * float(M_PI) * eps2;
+        dir = unit_vector( u * cosf(phi) * sinA + v * sinf(phi) * sinA + w * cosA );
 
-        // Aras sampling method
-        // create a random direction towards sphere
-        // coord system for sampling: sw, su, sv
-        //vec3 sw = unit_vector(sphere_light->center - rec.P);
-        //vec3 su = unit_vector(cross(fabs(sw.x())>0.01f ? vec3(0, 1, 0) : vec3(1, 0, 0), sw));
-        //vec3 sv = cross(sw, su);
-        //// sample sphere by solid angle
-        //float cosAMax = sqrtf(1.0f - r*r / (rec.P - sphere_light->center).squared_length());
-        //float eps1 = randf(), eps2 = randf();
-        //float cosA = 1.0f - eps1 + eps1 * cosAMax;
-        //float sinA = sqrtf(1.0f - cosA*cosA);
-        //float phi = 2 * float(M_PI) * eps2;
-        //vec3 l = su * cosf(phi) * sinA + sv * sin(phi) * sinA + sw * cosA;
-        //l.make_unit_vector();
-        //ray light_ray(rec.P, l);
+        ray light_ray( o, dir );
 
         #pragma omp atomic
         rays_cast++;
@@ -58,17 +53,9 @@ bool lambertian::scatter( const ray& r_in, const hit_record& rec, vec3& attenuat
         {
             if ( rec_light.id == sphere_light->id )
             {
-                // Naive GS version
-                // float dist2 = (rec_light.P - rec.P).squared_length();
-                float dist2 = ( sphere_light->center - rec.P ).squared_length();
-                vec3 scale = attenuation / ( 4 * float( M_PI ) * r * r );
-                scale *= std::max( 0.0f, dot( -light_ray.dirref(), rec_light.N ) );
-                scale *= std::min( 1.0f, 1.0f / dist2 );
-
-                // Aras version (solid angle)
-                //vec3 scale = attenuation * ( 2 - 2 * cosAMax );
-
-                direct_light += ( scale * sphere_light->mat->emission ) * std::max( 0.0f, dot( light_ray.dirref(), rec.N ) );
+                float inv_pdf_simp = 2 * ( 1 - cosAMax );
+                vec3 nl = dot( rec.N, r_in.dirref() ) < 0 ? rec.N : -rec.N;
+                direct_light += attenuation * sphere_light->mat->emission * std::max( 0.0f, dot( dir, nl ) ) * inv_pdf_simp;
             }
         }
     }

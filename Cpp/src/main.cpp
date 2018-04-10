@@ -20,6 +20,7 @@
 #define NB_OBJS 6
 #define MAX_DEPTH 6
 #define SAMPLES_AA 64
+//#define DIRECT_LIGHTING_ONLY
 
 static unsigned int rays_cast = 0;
 
@@ -36,22 +37,10 @@ vec3 trace_ao( const ray& r, hitable* scene )
 
         if ( scene->hit( ray( rec.P, ao_dir ), TMIN_EPS, std::numeric_limits<float>::max(), rec ) )
             return 0;
-
-        //else
-        //{
-        //    vec3 unit_dir = unit_vector( ao_dir );
-        //    float t = abs(unit_dir.y()); // 0.5f * unit_dir.y() + 0.5f;
-        //    return 0.6f * ( t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f) );
-        //}
     }
 
     return 1;
-    //vec3 unit_dir = unit_vector( r.dirref() );
-    //float t = abs(unit_dir.y()); // 0.5f * unit_dir.y() + 0.5f;
-    //return 0.6f * ( t*vec3(1.0) + (1.0f-t)*vec3(0.5f, 0.7f, 1.0f) );
 }
-
-//#define DIRECT_LIGHTING_ONLY
 
 vec3 trace_light( const ray& r, hitable* scene, int depth = 0 )
 {
@@ -142,7 +131,7 @@ int main()
 
     vec3 lookfrom = vec3( 5, 3, 4 );
     vec3 lookat = 0;
-    camera cam( lookfrom, lookat, vec3( 0, 1, 0 ), 40, 16.0f / 9.0f, 0.5f, ( lookfrom - lookat ).length() );
+    camera cam( lookfrom, lookat, vec3( 0, 1, 0 ), 40, 16.0f / 9.0f, 0.0f, ( lookfrom - lookat ).length() );
 
     hitable* list[NB_OBJS];
     list[0] = new sphere( vec3( 0 ),                 1, new lambertian( vec3( 0.1f, 0.2f, 0.5f ) ) );
@@ -175,6 +164,8 @@ int main()
         for ( int i = 0; i < w; i++ )
         {
             vec3 col( 0 );
+            //if ( i == 264 && j == 212 )
+            //    printf("Oops\n");
 
             for ( int k = 0; k < SAMPLES_AA ; k++ )
             {
